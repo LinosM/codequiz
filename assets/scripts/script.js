@@ -10,12 +10,14 @@ var initialsEl = document.querySelector("#initials");
 var initialsForm = document.querySelector("#initials-form");
 var viewHighscoresEl = document.querySelector("#viewHighscores");
 var highscoresEl = document.querySelector("#highscores");
+var correctSnd = document.querySelector("#correctSnd");
+var incorrectSnd = document.querySelector("#incorrectSnd");
 
 // Initializing global values
 var correctAnswers = 0;     // Number of answers user got right
 var timer = 75;
 var stopGame = false;       // Stops timer when set to true
-var questionNum = 0;
+var questionNum = 0;        // Which question the user is currently on
 var highscores = [];
 
 // Array containing each questions and answers with the correct response
@@ -103,18 +105,17 @@ function startQuiz() {
 
     quizQuestion();
     
-    // Starts the timer and ticks down
+    // Starts the quiz timer and ticks down
     var timerInterval = setInterval(function() {
 
-        if (stopGame) clearInterval(timerInterval);     // Stops timer if user answers last question
-
+        // Stops timer if user answers last question
+        if (stopGame) clearInterval(timerInterval);     
         
         timerEl.textContent = "Time left: " + timer;
-
         timer--;
     
         // Ends game when timer hits 0
-        if(timer === 0) {
+        if(timer <= 0) {
           clearInterval(timerInterval);
           endGame();
         }  
@@ -122,17 +123,22 @@ function startQuiz() {
 }
 
 function compareAnswers(x) {
-    var i = 1;
 
     if (x === questions[questionNum].correct) {
         correctAnswers++;
         response2El.textContent = "Correct!";
+        correctSnd.play();
     } else {
         response2El.textContent = "Incorrect";
         timer -= 10;
+        incorrectSnd.play();
     }
 
     responseEl.style.display = "block";
+    
+    // Timer for Correct/Incorrect to appear and go away
+    var i = 2;      
+    clearInterval(reponseInterval);
 
     var reponseInterval = setInterval(function() {
         i--;
@@ -147,15 +153,17 @@ function compareAnswers(x) {
     quizQuestion();
 }
 
+// Gets the index number of the chosen answer then compares it to the correct answer
 function answerButton(event) {
     var element = event.target;
 
     if (element.matches("button") === true) {
         var index = element.getAttribute("data-index");
-        if (index !== null) compareAnswers(index);
+        if (index !== null) compareAnswers(index);      
     }
 }
 
+// End results screen showing user's score and box to enter initials
 function endGame() {
     stopGame = true;
 
@@ -164,16 +172,13 @@ function endGame() {
     intro.textContent = "Your final score is " + correctAnswers + "/" + questions.length;
     intro.style.display = "block";
     initialsEl.style.display = "block";
-
 }
 
 function highScores(event) {
     event.preventDefault();
-
     var initials = initialsForm.value.trim();
 
     // Checks if the initials the user inputed are valid
-
     if (initials === "") {
         return;
     }
@@ -191,12 +196,14 @@ function highScores(event) {
     viewHighscores();
 }
 
+// Clears stored highscores and reloads the highscores page
 function clearScores() {
     highscores = [];
     localStorage.setItem("highscores", JSON.stringify(highscores));
     viewHighscores();
 }
 
+// Highscores page
 function viewHighscores() {
     initialsEl.style.display = "none";
     intro.style.display = "none";
@@ -218,12 +225,13 @@ function viewHighscores() {
         var li = document.createElement("li");
         li.setAttribute("id", "highscoreList");
         li.textContent = initials + " - " + score + "/5";
+        
         highscoresEl.appendChild(li);
-
         highscoresEl.appendChild(document.createElement("hr"));
     }
 }
 
+// Buttons in the highscores menu to go back to main menu or clear scores
 function options(event) {
     event.preventDefault();
     if(event.target.matches("button")) {
